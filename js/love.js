@@ -113,6 +113,8 @@ function Rise() {
 
     }, 22);
 
+    startFireworks();
+    showProposalBanner();
 }
 
 window.onload = function () {
@@ -125,3 +127,140 @@ window.onload = function () {
 
     }, 12000);
 };
+
+function startFireworks() {
+    const canvas = document.createElement('canvas');
+    canvas.id = 'fireworksCanvas';
+    canvas.style.position = 'fixed';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.width = '100vw';
+    canvas.style.height = '100vh';
+    canvas.style.zIndex = '9999';
+    canvas.style.pointerEvents = 'none';
+    document.body.appendChild(canvas);
+
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const fireworks = [];
+
+    class Firework {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = canvas.height;
+            this.targetY = Math.random() * (canvas.height / 2);
+            this.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+            this.radius = 2;
+            this.exploded = false;
+            this.particles = [];
+        }
+
+        update() {
+            if (!this.exploded) {
+                this.y -= 5;
+                if (this.y <= this.targetY) {
+                    this.exploded = true;
+                    for (let i = 0; i < 30; i++) {
+                        const angle = Math.random() * 2 * Math.PI;
+                        const speed = Math.random() * 4 + 1;
+                        this.particles.push({
+                            x: this.x,
+                            y: this.y,
+                            dx: Math.cos(angle) * speed,
+                            dy: Math.sin(angle) * speed,
+                            alpha: 1
+                        });
+                    }
+                }
+            } else {
+                this.particles.forEach(p => {
+                    p.x += p.dx;
+                    p.y += p.dy;
+                    p.dy += 0.05; // gravity
+                    p.alpha -= 0.02;
+                });
+                this.particles = this.particles.filter(p => p.alpha > 0);
+            }
+        }
+
+        draw(ctx) {
+            if (!this.exploded) {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            } else {
+                this.particles.forEach(p => {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 2, 0, 2 * Math.PI);
+                    ctx.fillStyle = this.color;
+                    ctx.globalAlpha = p.alpha;
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                });
+            }
+        }
+
+        isDone() {
+            return this.exploded && this.particles.length === 0;
+        }
+    }
+
+    function animateFireworks() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (Math.random() < 0.05) {
+            fireworks.push(new Firework());
+        }
+
+        fireworks.forEach(f => {
+            f.update();
+            f.draw(ctx);
+        });
+
+        for (let i = fireworks.length - 1; i >= 0; i--) {
+            if (fireworks[i].isDone()) {
+                fireworks.splice(i, 1);
+            }
+        }
+
+        requestAnimationFrame(animateFireworks);
+    }
+
+    animateFireworks();
+}
+
+function showProposalBanner() {
+    const banner = document.createElement('div');
+    banner.innerText = '🥰 Namora comigo? 🥰';
+    banner.style.position = 'fixed';
+    banner.style.top = '50%';
+    banner.style.left = '50%';
+    banner.style.transform = 'translate(-50%, -50%)';
+    banner.style.fontSize = '4rem';
+    banner.style.fontWeight = 'bold';
+    banner.style.fontFamily = 'Arial, sans-serif';
+    banner.style.color = 'white';
+    banner.style.textShadow = `
+        2px 2px 0 #ff0080,
+        -2px 2px 0 #00ffff,
+        2px -2px 0 #ffff00,
+        -2px -2px 0 #ff0000
+    `;
+    banner.style.zIndex = '99999';
+    banner.style.animation = 'pulse 1.5s infinite';
+    document.body.appendChild(banner);
+
+    // Adiciona animação via CSS
+    const style = document.createElement('style');
+    style.innerHTML = `
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.8; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
+}
